@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixel Editor — создавай пиксель-арт онлайн</title>
+  <meta name="description" content="Бесплатный онлайн-редактор пиксель-арта. Рисуй, заливай, сохраняй и скачивай свои шедевры!">
+  <meta name="keywords" content="пиксель-арт, редактор, рисование, онлайн, pixel art, editor">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
+
+  <meta property="og:title" content="Pixel Editor">
+  <meta property="og:description" content="Создавай пиксель-арт онлайн бесплатно">
+  <meta property="og:type" content="website">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+
+  <script>
+      (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+      m[i].l=1*new Date();
+      for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+      k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+      (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+      ym(99999999, "init", { clickmap:true, trackLinks:true, accurateTrackBounce:true, webvisor:true });
+  </script>
+
+  <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+      body { background-color: #1a1a2e; color: #fff; scroll-behavior: smooth; }
+
+      .hero {
+          height: 100vh;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          text-align: center;
+          background: linear-gradient(135deg, #16213e, #0f3460);
+          padding: 20px;
+          position: relative;
+          overflow: hidden;
+      }
+      .hero-logo { font-size: 80px; animation: float 3s ease-in-out infinite; }
+      @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+      .hero h1 {
+          font-size: 4rem;
+          font-weight: 900;
+          background: linear-gradient(45deg, #f7971e, #ffd200);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+      }
+      .hero p { font-size: 1.3rem; max-width: 600px; margin: 20px 0 30px; color: #b0b0d0; }
+      .btn-primary {
+          padding: 16px 48px;
+          font-size: 1.2rem;
+          font-weight: 700;
+          border: none;
+          border-radius: 50px;
+          background: linear-gradient(45deg, #f7971e, #ffd200);
+          color: #1a1a2e;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 8px 25px rgba(255, 210, 0, 0.4);
+          text-decoration: none;
+          display: inline-block;
+      }
+      .btn-primary:hover { transform: scale(1.05) translateY(-3px); box-shadow: 0 12px 35px rgba(255,210,0,0.6); }
+      .btn-primary:active { transform: scale(0.95); }
+
+      .info-section { padding: 80px 20px; background: #1a1a2e; text-align: center; border-top: 2px solid #2a2a4a; }
+      .info-section h2 {
+          font-size: 2.8rem;
+          margin-bottom: 30px;
+          background: linear-gradient(45deg, #f7971e, #ffd200);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+      }
+      .info-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 30px;
+          max-width: 1000px;
+          margin: 0 auto;
+      }
+      .info-card {
+          background: #252545;
+          padding: 30px 20px;
+          border-radius: 20px;
+          transition: all 0.4s ease;
+          border: 1px solid #3a3a5a;
+          transform: perspective(800px) rotateX(0deg) rotateY(0deg);
+      }
+      .info-card:hover {
+          transform: perspective(800px) rotateX(5deg) rotateY(10deg) translateY(-10px);
+          box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+          border-color: #ffd200;
+      }
+      .info-card .icon { font-size: 48px; display: block; margin-bottom: 15px; }
+      .info-card h3 { color: #ffd200; margin-bottom: 10px; }
+      .info-card p { color: #b0b0d0; font-size: 0.95rem; }
+
+      .editor-section { padding: 50px 20px; background: #12122a; }
+      .editor-container { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 25px; }
+      .editor-title { font-size: 2.2rem; color: #ffd200; }
+
+      .palette {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          justify-content: center;
+          padding: 15px 20px;
+          background: #1f1f3a;
+          border-radius: 50px;
+          border: 1px solid #333;
+      }
+      .color-swatch {
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: 3px solid transparent;
+          cursor: pointer;
+          transition: all 0.2s ease;
+      }
+      .color-swatch:hover { transform: scale(1.15); }
+      .color-swatch.active { border-color: #fff; box-shadow: 0 0 20px rgba(255,255,255,0.5); transform: scale(1.1); }
+
+      .tools { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
+      .tool-btn {
+          padding: 10px 24px;
+          border-radius: 30px;
+          border: 2px solid #444;
+          background: transparent;
+          color: #ddd;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+      }
+      .tool-btn:hover { border-color: #ffd200; color: #ffd200; }
+      .tool-btn.active-tool { background: #ffd200; color: #1a1a2e; border-color: #ffd200; }
+
+      .grid-wrapper {
+          background: #1a1a2e;
+          padding: 15px;
+          border-radius: 20px;
+          border: 2px solid #333;
+          overflow: auto;
+          max-width: 100%;
+      }
+      #pixel-grid {
+          display: grid;
+          gap: 0;
+          background: #2a2a4a;
+          width: fit-content;
+          margin: 0 auto;
+      }
+      .pixel-cell {
+          background-color: #fff;
+          width: 28px;
+          height: 28px;
+          transition: background-color 0.1s ease;
+          border: 1px solid rgba(255,255,255,0.05);
+      }
+      .pixel-cell:hover { border-color: rgba(255,255,255,0.3); }
+
+      .action-buttons { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
+      .btn-secondary {
+          padding: 12px 28px;
+          border-radius: 30px;
+          border: 2px solid #ffd200;
+          background: transparent;
+          color: #ffd200;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.3s ease;
+      }
+      .btn-secondary:hover { background: #ffd200; color: #1a1a2e; transform: scale(1.03); }
+      .btn-secondary:active { transform: scale(0.95); }
+
+      #preview-container {
+          margin-top: 20px;
+          padding: 15px;
+          background: #0d0d1a;
+          border-radius: 16px;
+          border: 2px dashed #444;
+          display: none;
+          justify-content: center;
+          flex-wrap: wrap;
+      }
+      #preview-container img { max-width: 100%; border-radius: 8px; }
+
+      .footer {
+          background: #0d0d1a;
+          padding: 40px 20px;
+          text-align: center;
+          border-top: 1px solid #2a2a4a;
+      }
+      .footer-content {
+          max-width: 1000px;
+          margin: 0 auto;
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: space-between;
+          align-items: center;
+          gap: 20px;
+      }
+      .footer-logo { font-size: 28px; font-weight: 900; color: #ffd200; }
+      .footer-links a { color: #b0b0d0; text-decoration: none; margin: 0 15px; transition: color 0.3s; }
+      .footer-links a:hover { color: #ffd200; }
+      .footer-copy { color: #666; font-size: 0.9rem; }
+
+      @media (max-width: 600px) {
+          .hero h1 { font-size: 2.5rem; }
+          .hero p { font-size: 1rem; }
+          .pixel-cell { width: 22px; height: 22px; }
+          .palette { gap: 8px; padding: 12px 16px; }
+          .color-swatch { width: 32px; height: 32px; }
+          .info-section h2 { font-size: 2rem; }
+          .editor-title { font-size: 1.8rem; }
+          .footer-content { flex-direction: column; text-align: center; }
+      }
+      @media (max-width: 400px) {
+          .pixel-cell { width: 18px; height: 18px; }
+          .btn-primary { padding: 12px 30px; font-size: 1rem; }
+      }
+  </style>
+</head>
+<body>
+  <section class="hero" id="home">
+      <div class="hero-logo">🎨</div>
+      <h1>Pixel Editor</h1>
+      <p>Создавай пиксель-арт легко и быстро. Рисуй, заливай, сохраняй!</p>
+      <a href="#editor" class="btn-primary">Начать рисовать →</a>
+  </section>
+  <section class="info-section" id="about">
+      <h2>Всё для творчества</h2>
+      <div class="info-grid">
+          <div class="info-card">
+              <span class="icon">🖌️</span>
+              <h3>Рисование</h3>
+              <p>Кликай по клеткам или рисуй с зажатой мышью</p>
+          </div>
+          <div class="info-card">
+              <span class="icon">🎨</span>
+              <h3>10 цветов</h3>
+              <p>Палитра на любой вкус, включая белый фон</p>
+          </div>
+          <div class="info-card">
+              <span class="icon">✨</span>
+              <h3>Заливка</h3>
+              <p>Заливай области с эффектом staggering</p>
+          </div>
+          <div class="info-card">
+              <span class="icon">💾</span>
+              <h3>Автосохранение</h3>
+              <p>Рисунок сохраняется в cookie браузера</p>
+          </div>
+          <div class="info-card">
+              <span class="icon">📥</span>
+              <h3>Экспорт</h3>
+              <p>Скачивай готовые работы в PNG</p>
+          </div>
+          <div class="info-card">
+              <span class="icon">📱</span>
+              <h3>Адаптив</h3>
+              <p>Работает на всех устройствах — от телефона до ПК</p>
+          </div>
+      </div>
+  </section>
+  <section class="editor-section" id="editor">
+      <div class="editor-container">
+          <h2 class="editor-title">🖌️ Редактор</h2>
+
+          <div class="palette" id="palette"></div>
+
+          <div class="tools">
+              <button class="tool-btn active-tool" data-tool="brush">🖊️ Кисть</button>
+              <button class="tool-btn" data-tool="eraser">🧹 Ластик</button>
+              <button class="tool-btn" data-tool="fill">🪣 Заливка</button>
+          </div>
+
+          <div class="grid-wrapper">
+              <div id="pixel-grid"></div>
+          </div>
+
+          <div class="action-buttons">
+              <button class="btn-secondary" id="clear-btn">🗑️ Очистить</button>
+              <button class="btn-secondary" id="preview-btn">👁️ Превью</button>
+              <button class="btn-secondary" id="download-btn">⬇️ Скачать</button>
+          </div>
+
+          <div id="preview-container"></div>
+      </div>
+  </section>
+  <footer class="footer">
+      <div class="footer-content">
+          <div class="footer-logo">Pixel</div>
+          <div class="footer-links">
+              <a href="#home">Главная</a>
+              <a href="#about">О проекте</a>
+              <a href="#editor">Редактор</a>
+              <a href="https://github.com/your-repo" target="_blank">GitHub</a>
+          </div>
+          <div class="footer-copy">© 2026 Pixel App. Все права защищены.</div>
+      </div>
+  </footer>
+
+  <script>
+      (function() {
+          'use strict';
+
+          const ROWS = 20;
+          const COLS = 20;
+          const DEFAULT_COLOR = '#ffffff';
+
+          const COLORS = [
+              '#ffffff', '#e74c3c', '#e67e22', '#f1c40f',
+              '#2ecc71', '#1abc9c', '#3498db', '#9b59b6',
+              '#e84393', '#2d3436'
+          ];
+
+          let gridData = [];
+          let currentColor = COLORS[1];
+          let currentTool = 'brush';
+          let isMouseDown = false;
+
+          const gridContainer = document.getElementById('pixel-grid');
+          const paletteContainer = document.getElementById('palette');
+          const previewContainer = document.getElementById('preview-container');
+
+          function getCookie(name) {
+              const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+              return match ? decodeURIComponent(match[2]) : null;
+          }
+
+          function setCookie(name, value, days = 7) {
+              const d = new Date();
+              d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+              document.cookie = `${name}=${encodeURIComponent(value)}; expires=${d.toUTCString()}; path=/`;
+          }
+
+          function saveToCookie() {
+              setCookie('pixelGrid', JSON.stringify(gridData));
+          }
+
+          function updateCell(row, col) {
+              const index = row * COLS + col;
+              const cells = gridContainer.children;
+              if (cells[index]) {
+                  cells[index].style.backgroundColor = gridData[row][col];
+              }
+          }
+
+          function renderGrid() {
+              gridContainer.style.gridTemplateColumns = `repeat(${COLS}, 28px)`;
+              gridContainer.style.gridTemplateRows = `repeat(${ROWS}, 28px)`;
+              gridContainer.innerHTML = '';
+
+              for (let r = 0; r < ROWS; r++) {
+                  for (let c = 0; c < COLS; c++) {
+                      const cell = document.createElement('div');
+                      cell.className = 'pixel-cell';
+                      cell.dataset.row = r;
+                      cell.dataset.col = c;
+                      cell.style.backgroundColor = gridData[r][c] || DEFAULT_COLOR;
+
+                      cell.addEventListener('mousedown', (e) => {
+                          e.preventDefault();
+                          isMouseDown = true;
+                          handleCellClick(r, c);
+                      });
+
+                      cell.addEventListener('mouseenter', () => {
+                          if (isMouseDown) handleCellClick(r, c);
+                      });
+
+                      cell.addEventListener('mouseup', () => {
+                          isMouseDown = false;
+                      });
+
+                      gridContainer.appendChild(cell);
+                  }
+              }
+
+              document.addEventListener('mouseup', () => {
+                  isMouseDown = false;
+              });
+          }
+
+          function initGrid() {
+              const saved = getCookie('pixelGrid');
+              if (saved) {
+                  try {
+                      const parsed = JSON.parse(saved);
+                      if (Array.isArray(parsed) && parsed.length === ROWS && parsed[0].length === COLS) {
+                          gridData = parsed;
+                          renderGrid();
+                          return;
+                      }
+                  } catch (e) {}
+              }
+
+              gridData = [];
+              for (let r = 0; r < ROWS; r++) {
+                  gridData[r] = new Array(COLS).fill(DEFAULT_COLOR);
+              }
+              renderGrid();
+              saveToCookie();
+          }
+
+          function floodFill(sr, sc, targetColor, newColor) {
+              if (targetColor === newColor || sr < 0 || sr >= ROWS || sc < 0 || sc >= COLS) return;
+
+              const visited = new Set();
+              const queue = [[sr, sc]];
+              const cellsToFill = [];
+
+              while (queue.length > 0) {
+                  const [r, c] = queue.shift();
+                  const key = `${r},${c}`;
+                  if (visited.has(key)) continue;
+                  if (r < 0 || r >= ROWS || c < 0 || c >= COLS) continue;
+                  if (gridData[r][c] !== targetColor) continue;
+
+                  visited.add(key);
+                  cellsToFill.push({ r, c });
+                  queue.push([r + 1, c], [r - 1, c], [r, c + 1], [r, c - 1]);
+              }
+
+              if (cellsToFill.length === 0) return;
+
+              const elements = [];
+              cellsToFill.forEach(({ r, c }) => {
+                  gridData[r][c] = newColor;
+                  const index = r * COLS + c;
+                  const cell = gridContainer.children[index];
+                  if (cell) {
+                      elements.push(cell);
+                      cell.style.backgroundColor = newColor;
+                  }
+              });
+
+              if (typeof anime !== 'undefined') {
+                  anime({
+                      targets: elements,
+                      scale: [
+                          { value: 0.8, duration: 100 },
+                          { value: 1.1, duration: 150 },
+                          { value: 1, duration: 100 }
+                      ],
+                      delay: (el, i) => i * 8,
+                      duration: 350,
+                      easing: 'easeOutQuad'
+                  });
+              }
+
+              saveToCookie();
+          }
+
+          function handleCellClick(row, col) {
+              if (currentTool === 'fill') {
+                  floodFill(row, col, gridData[row][col], currentColor);
+                  return;
+              }
+
+              const colorToApply = (currentTool === 'eraser') ? DEFAULT_COLOR : currentColor;
+              if (gridData[row][col] !== colorToApply) {
+                  gridData[row][col] = colorToApply;
+                  updateCell(row, col);
+                  saveToCookie();
+              }
+          }
+
+          function renderPalette() {
+              paletteContainer.innerHTML = '';
+              COLORS.forEach((hex) => {
+                  const swatch = document.createElement('div');
+                  swatch.className = 'color-swatch';
+                  swatch.style.backgroundColor = hex;
+                  if (hex === currentColor) swatch.classList.add('active');
+                  if (hex === '#ffffff') swatch.style.border = '3px solid #888';
+                  swatch.dataset.color = hex;
+                  swatch.addEventListener('click', () => {
+                      currentColor = hex;
+                      document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('active'));
+                      swatch.classList.add('active');
+                  });
+                  paletteContainer.appendChild(swatch);
+              });
+          }
+
+          function setTool(tool) {
+              currentTool = tool;
+              document.querySelectorAll('.tool-btn').forEach(btn => {
+                  btn.classList.toggle('active-tool', btn.dataset.tool === tool);
+              });
+          }
+
+          function clearGrid() {
+              for (let r = 0; r < ROWS; r++) {
+                  for (let c = 0; c < COLS; c++) {
+                      gridData[r][c] = DEFAULT_COLOR;
+                      updateCell(r, c);
+                  }
+              }
+              saveToCookie();
+          }
+
+          function showPreview() {
+              const wrapper = document.querySelector('.grid-wrapper');
+              previewContainer.style.display = 'flex';
+              previewContainer.innerHTML = '<p style="color:#aaa;">Генерация превью...</p>';
+
+              domtoimage.toPng(wrapper)
+                  .then((dataUrl) => {
+                      const img = document.createElement('img');
+                      img.src = dataUrl;
+                      img.style.maxWidth = '100%';
+                      previewContainer.innerHTML = '';
+                      previewContainer.appendChild(img);
+                  })
+                  .catch((error) => {
+                      previewContainer.innerHTML = `<p style="color:#e74c3c;">Ошибка: ${error.message}</p>`;
+                  });
+          }
+
+          function downloadImage() {
+              const wrapper = document.querySelector('.grid-wrapper');
+              domtoimage.toPng(wrapper)
+                  .then((dataUrl) => {
+                      const link = document.createElement('a');
+                      link.download = `pixel-art-${Date.now()}.png`;
+                      link.href = dataUrl;
+                      link.click();
+                  })
+                  .catch((error) => {
+                      alert('Ошибка скачивания: ' + error.message);
+                  });
+          }
+
+          // ===== ИНИЦИАЛИЗАЦИЯ =====
+          document.addEventListener('DOMContentLoaded', function() {
+              initGrid();
+              renderPalette();
+
+              document.querySelectorAll('.tool-btn').forEach(btn => {
+                  btn.addEventListener('click', () => setTool(btn.dataset.tool));
+              });
+              setTool('brush');
+
+              document.getElementById('clear-btn').addEventListener('click', clearGrid);
+              document.getElementById('preview-btn').addEventListener('click', showPreview);
+              document.getElementById('download-btn').addEventListener('click', downloadImage);
+          });
+
+      })();
+  </script>
+
+</body>
+</html>
